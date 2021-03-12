@@ -9,6 +9,16 @@ networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "
 # set the index BSSID (MAC address of the AP)
 networks.set_index("BSSID", inplace=True)
 
+beacon_SSID = 'REPN'
+beacon_found = False
+beacon_channel = 2
+channel_hoping = False
+
+# interface name, check using iwconfig
+interface = "wlan0mon"
+
+#def scanner(networks):
+
 def callback(packet):
     if packet.haslayer(Dot11Beacon):
         # extract the MAC address of the network
@@ -27,12 +37,11 @@ def callback(packet):
         crypto = stats.get("crypto")
         networks.loc[bssid] = (ssid, dbm_signal, channel, crypto)
 
-
 def print_all():
     while True:
         os.system("clear")
         print(networks)
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 
 def change_channel():
@@ -43,17 +52,16 @@ def change_channel():
         ch = ch % 14 + 1
         time.sleep(0.5)
 
-
 if __name__ == "__main__":
-    # interface name, check using iwconfig
-    interface = "wlan1mon"
+    os.system(f"iwconfig {interface} channel {beacon_channel}")
     # start the thread that prints all the networks
     printer = Thread(target=print_all)
     printer.daemon = True
     printer.start()
     # start the channel changer
-    channel_changer = Thread(target=change_channel)
-    channel_changer.daemon = True
-    channel_changer.start()
+    if channel_hoping == True :
+        channel_changer = Thread(target=change_channel)
+        channel_changer.daemon = True
+        channel_changer.start()
     # start sniffing
     sniff(prn=callback, iface=interface)
