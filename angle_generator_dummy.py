@@ -5,14 +5,16 @@ import pika
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 line = connection.channel()
-line.queue_declare(queue='beam-angle')
+
+line.exchange_declare(exchange='beam-angle',
+                    exchange_type='fanout')
 
 while True:
     try:
         for i in range(0,190,10):
             data = i
-            line.basic_publish(exchange='',
-                            routing_key='beam-angle',
+            line.basic_publish(exchange='beam-angle',
+                            routing_key='',
                             body=str(data))
             print(" {} Packet sent".format(data))
             time.sleep(0.5)
