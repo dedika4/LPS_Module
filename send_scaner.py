@@ -6,9 +6,20 @@ import pandas
 import time
 import os
 
+# initialize connection to RabbitMQ Server 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 line = connection.channel()
-line.queue_declare(queue='hello')
+
+# initialize exchange and queue and bind them
+line.exchange_declare(exchange='beam-angle', 
+                    exchange_type='fanout')
+
+result = line.queue_declare(queue='', 
+                    exclusive=True)
+
+queue_name = result.method.queue
+line.queue_bind(exchange='beam-angle',
+                queue=queue_name)
 
 # initialize the networks dataframe that will contain all access points nearby
 networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "Crypto"])
@@ -24,6 +35,7 @@ channel_hoping = False
 interface = "wlan1mon"
 
 data = []
+angle = -1
 
 def callback(packet):
     global data
@@ -49,13 +61,11 @@ def callback(packet):
             data = "no name bitch"
 
 def print_all():
+    global angle
     while True:
-        os.system("clear")
-        print(networks)
-        line.basic_publish(exchange='',
-                      routing_key='hello',
-                      body=data)
-        print(" [x] Packet sent")
+        #os.system("clear")
+        #print(networks)
+        #print(" [x] Packet sent")
         time.sleep(0.1)
 
 
@@ -67,7 +77,17 @@ def change_channel():
         ch = ch % 14 + 1
         time.sleep(0.5)
 
-if __name__ == "__main__":
+def receive_angle(ch, method, properties, body):
+    global angle
+    angle = int(body)
+    print('Angle : {}'.format(angle))
+
+# define consuming properties
+line.basic_consume(queue=queue_name, 
+                    on_message_callback=receive_angle, 
+                    auto_ack=True)
+
+def main():
     os.system(f"iwconfig {interface} channel {beacon_channel}")
     # start the thread that prints all the networks
     printer = Thread(target=print_all)
@@ -79,6 +99,19 @@ if __name__ == "__main__":
         channel_changer.daemon = True
         channel_changer.start()
     # start sniffing
-    sniff(prn=callback, iface=interface)
+    #sniff(prn=callback, iface=interface)
+    # start receiving beam angle
+    print('Waiting for angle ...')
+    receiver = Thread(target=line.start_consuming)
+    #receiver.daemon = True
+    receiver.start()
 
-connection.close()
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
