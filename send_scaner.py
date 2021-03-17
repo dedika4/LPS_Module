@@ -28,7 +28,7 @@ networks.set_index("BSSID", inplace=True)
 
 beacon_SSID = 'REPN'
 beacon_found = False
-beacon_channel = 2
+beacon_channel = 11
 channel_hoping = False
 
 # interface name, check using iwconfig
@@ -36,29 +36,52 @@ interface = "wlan1mon"
 
 data = []
 angle = -1
+count = 0
+avg_power = 0
+
+t = time.time()
+packet_update_period = 0.5 # in seconds
 
 def callback(packet):
     global data
-    if packet.haslayer(Dot11Beacon):
-        # extract the MAC address of the network
-        bssid = packet[Dot11].addr2
-        # get the name of it
-        ssid = packet[Dot11Elt].info.decode()
-        try:
-            dbm_signal = packet.dBm_AntSignal
-        except:
-            dbm_signal = "N/A"
-        # extract network stats
-        stats = packet[Dot11Beacon].network_stats()
-        # get the channel of the AP
-        channel = stats.get("channel")
-        # get the crypto
-        crypto = stats.get("crypto")
-        networks.loc[bssid] = (ssid, dbm_signal, channel, crypto)
-        if ssid == beacon_SSID:
-            data = ssid
-        else:
-            data = "no name bitch"
+    global angle
+    global count
+    global avg_power
+    global t
+
+    t_now = time.time()
+    if (angle!=-1):
+        if packet.haslayer(Dot11Beacon):
+            # extract the MAC address of the network
+            bssid = packet[Dot11].addr2
+            # get the name of it
+            ssid = packet[Dot11Elt].info.decode()
+            try:
+                dbm_signal = packet.dBm_AntSignal
+            except:
+                dbm_signal = "N/A"
+            # extract network stats
+            stats = packet[Dot11Beacon].network_stats()
+            # get the channel of the AP
+            channel = stats.get("channel")
+            # get the crypto
+            crypto = stats.get("crypto")
+            networks.loc[bssid] = (ssid, dbm_signal, channel, crypto)
+            if t_now - t < packet_update_period:
+                if (ssid == beacon_SSID) and (dbm_signal != "N/A"):
+                    avg_power += int(dbm_signal)
+                    count +=1
+                #print('Packet count : {}'.format(count))
+                #print('Average Power : {}'.format(avg_power))
+            else:
+                print('Its time')
+                if count!=0: 
+                    avg_power = avg_power/count
+                data = [angle, avg_power]
+                print('Average power : {:.3f} for {} degree angle'.format(avg_power,angle))
+                count = 0
+                avg_power = 0
+                t = time.time()
 
 def print_all():
     global angle
@@ -79,8 +102,8 @@ def change_channel():
 
 def receive_angle(ch, method, properties, body):
     global angle
-    angle = int(body)
     print('Angle : {}'.format(angle))
+    angle = int(body)
 
 # define consuming properties
 line.basic_consume(queue=queue_name, 
@@ -98,13 +121,14 @@ def main():
         channel_changer = Thread(target=change_channel)
         channel_changer.daemon = True
         channel_changer.start()
-    # start sniffing
-    #sniff(prn=callback, iface=interface)
     # start receiving beam angle
     print('Waiting for angle ...')
     receiver = Thread(target=line.start_consuming)
     #receiver.daemon = True
     receiver.start()
+    # start sniffing
+    print('start sniffing')
+    sniff(prn=callback, iface=interface)
 
 if __name__ == '__main__':
     try:
