@@ -9,10 +9,14 @@ import os
 # initialize connection to RabbitMQ Server 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 line = connection.channel()
+connection2 = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+line2 = connection2.channel()
 
 # initialize exchange and queue and bind them
 line.exchange_declare(exchange='beam-angle', 
                     exchange_type='fanout')
+line2.exchange_declare(exchange='direct_power', 
+                        exchange_type='direct')
 
 result = line.queue_declare(queue='', 
                     exclusive=True)
@@ -20,6 +24,8 @@ result = line.queue_declare(queue='',
 queue_name = result.method.queue
 line.queue_bind(exchange='beam-angle',
                 queue=queue_name)
+
+routing_key = 'Angle-power-avg'
 
 # initialize the networks dataframe that will contain all access points nearby
 networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "Crypto"])
@@ -34,7 +40,6 @@ channel_hoping = False
 # interface name, check using iwconfig
 interface = "wlan1mon"
 
-data = []
 angle = -1
 count = 0
 avg_power = 0
@@ -42,8 +47,13 @@ avg_power = 0
 t = time.time()
 packet_update_period = 0.5 # in seconds
 
+def send_avg_power(message):
+    print(" [x] Message sent")
+    line2.basic_publish(exchange='direct_power', 
+                        routing_key=routing_key, 
+                        body=message)
+
 def callback(packet):
-    global data
     global angle
     global count
     global avg_power
@@ -71,26 +81,15 @@ def callback(packet):
                 if (ssid == beacon_SSID) and (dbm_signal != "N/A"):
                     avg_power += int(dbm_signal)
                     count +=1
-                #print('Packet count : {}'.format(count))
-                #print('Average Power : {}'.format(avg_power))
             else:
-                print('Its time')
                 if count!=0: 
                     avg_power = avg_power/count
-                data = [angle, avg_power]
-                print('Average power : {:.3f} for {} degree angle'.format(avg_power,angle))
+                message = 'Average power : {:.2f} for {} degree angle'.format(avg_power,angle)
+                print(message)
+                send_avg_power(message)
                 count = 0
                 avg_power = 0
                 t = time.time()
-
-def print_all():
-    global angle
-    while True:
-        #os.system("clear")
-        #print(networks)
-        #print(" [x] Packet sent")
-        time.sleep(0.1)
-
 
 def change_channel():
     ch = 1
@@ -102,7 +101,6 @@ def change_channel():
 
 def receive_angle(ch, method, properties, body):
     global angle
-    print('Angle : {}'.format(angle))
     angle = int(body)
 
 # define consuming properties
@@ -112,10 +110,6 @@ line.basic_consume(queue=queue_name,
 
 def main():
     os.system(f"iwconfig {interface} channel {beacon_channel}")
-    # start the thread that prints all the networks
-    printer = Thread(target=print_all)
-    printer.daemon = True
-    printer.start()
     # start the channel changer
     if channel_hoping == True :
         channel_changer = Thread(target=change_channel)
