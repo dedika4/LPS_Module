@@ -1,10 +1,13 @@
 #!/usr/bin/env python
-import pika
-from scapy.all import *
-from threading import Thread
-import pandas
 import time
 import os
+import json
+
+import pika
+import pandas
+
+from scapy.all import *
+from threading import Thread
 
 # initialize connection to RabbitMQ Server 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -34,7 +37,7 @@ networks.set_index("BSSID", inplace=True)
 
 beacon_SSID = 'REPN'
 beacon_found = False
-beacon_channel = 11
+beacon_channel = 8
 channel_hoping = False
 
 # interface name, check using iwconfig
@@ -84,7 +87,8 @@ def callback(packet):
             else:
                 if count!=0: 
                     avg_power = avg_power/count
-                message = 'Average power : {:.2f} for {} degree angle'.format(avg_power,angle)
+                data = {'Angle':angle, 'RSSI':avg_power}
+                message = json.dumps(data,indent=2)
                 print(message)
                 send_avg_power(message)
                 count = 0
