@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-import pika, sys, os
+import json
+import sys
+import os
+
+import pika
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -15,7 +19,9 @@ def main():
                     routing_key='Angle-power-avg')
 
     def callback(ch, method, properties, body):
-        print(" [x] Received %r" % body)
+        message = json.loads(body)
+        print("At angle {} the average power is {}".format(message['Angle'],message['RSSI']))
+        print(" [x] Received %r" % json.loads(body))
 
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
