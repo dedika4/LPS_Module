@@ -12,7 +12,7 @@ networks.set_index("BSSID", inplace=True)
 beacon_SSID = 'REPN'
 beacon_found = False
 beacon_channel = 10
-channel_hoping = False
+channel_hoping = True
 
 # interface name, check using iwconfig
 interface = "wlan1mon"
