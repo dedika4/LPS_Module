@@ -9,7 +9,7 @@ line = connection.channel()
 line.exchange_declare(exchange='beam-angle',
                     exchange_type='fanout')
 
-packet_update_period = 0.5 # in seconds
+packet_update_period = 0.5 #float(sys.argv[1]) # in seconds
 
 while True:
     i = 0

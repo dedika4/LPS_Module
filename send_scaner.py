@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import time
+import sys
 import os
 import json
 
@@ -37,7 +38,7 @@ networks.set_index("BSSID", inplace=True)
 
 beacon_SSID = 'REPN'
 beacon_found = False
-beacon_channel = 10
+beacon_channel = 10 #int(sys.argv[1])
 channel_hoping = False
 
 # interface name, check using iwconfig
@@ -48,7 +49,7 @@ count = 0
 avg_power = 0
 
 t = time.time()
-packet_update_period = 0.5 # in seconds
+packet_update_period = 0.5 #float(sys.argv[2]) # in seconds
 
 def send_avg_power(message):
     print(" [x] Message sent")
