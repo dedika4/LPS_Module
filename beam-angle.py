@@ -22,7 +22,7 @@ if __name__ == '__main__':
         while True:
             if ser.in_waiting > 0:
                 data = ser.readline().decode('utf-8').rstrip()
-                print(data)
+                print("Angle : {}".format(data))
                 line.basic_publish(exchange='beam-angle',
                                 routing_key='',
                                 body=str(data))

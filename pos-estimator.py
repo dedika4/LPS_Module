@@ -8,6 +8,7 @@ import operator
 import pika
 
 power_angle = {}
+count = False
 
 def calculate_distance(avg_power,path_loss_model='fspl'):
     ptx = 20 # router transmit power in dbm
@@ -21,7 +22,7 @@ def calculate_distance(avg_power,path_loss_model='fspl'):
 
     d = 10**((loss - loss_param)/20) # estimate distance in km
     d_m = d * 1000 # estimate distance in meter
-    return d_m
+    return d_m,loss
 
 def estimate_coordinate(angle, distance):
     x = distance * math.sin(angle)
@@ -43,21 +44,28 @@ def main():
 
     def callback(ch, method, properties, body):
         global power_angle
+        global count
 
         message = json.loads(body)
         angle = message['Angle']
         avg_power = message['RSSI']
-
         power_angle[angle]=avg_power
-        beacon_angle = max(power_angle.items(), key=operator.itemgetter(1))[0]
-        max_power = power_angle[beacon_angle]
 
-        dist = calculate_distance(beacon_angle,'fspl')
-        x,y = estimate_coordinate(beacon_angle,dist)
+        if count==True:
+            beacon_angle = max(power_angle.items(), key=operator.itemgetter(1))[0]
+            max_power = power_angle[beacon_angle]
+
+            dist,loss = calculate_distance(max_power,'fspl')
+            x,y = estimate_coordinate(beacon_angle,dist)
+            
+            print('Angle : {}, Max power : {}, Loss : {}'.format(beacon_angle,max_power,loss))
+            print('Distance : {}'.format(dist))
+            print('X : {}, Y:{}'.format(x,y))
         
-        print('Angle : {}, Max power : {}'.format(beacon_angle,max_power))
-        print('Distance : {}'.format(dist))
-        print('X : {}, Y:{}'.format(x,y))
+        if angle==170:
+            count = True
+        else:
+            count = False
 
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
@@ -68,7 +76,7 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('Interrupted')
+        print('\n \n Interrupted')
         print(power_angle)
         beacon_angle = max(power_angle.items(), key=operator.itemgetter(1))[0]
         max_power = power_angle[beacon_angle]
