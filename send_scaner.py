@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import time
-import sys
+#import sys
 import os
 import json
 
@@ -36,9 +36,9 @@ networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "
 # set the index BSSID (MAC address of the AP)
 networks.set_index("BSSID", inplace=True)
 
-beacon_SSID = 'REPN'
+beacon_SSID = 'RedHawk'
 beacon_found = False
-beacon_channel = 10 #int(sys.argv[1])
+beacon_channel = int(sys.argv[1])
 channel_hoping = False
 
 # interface name, check using iwconfig
@@ -49,7 +49,7 @@ count = 0
 avg_power = 0
 
 t = time.time()
-packet_update_period = 0.5 #float(sys.argv[2]) # in seconds
+packet_update_period = float(sys.argv[2]) # in seconds
 
 def send_avg_power(message):
     print(" [x] Message sent")
@@ -88,7 +88,7 @@ def callback(packet):
             else:
                 if count!=0: 
                     avg_power = avg_power/count
-                data = {'Angle':angle, 'RSSI':avg_power}
+                data = {'Angle':angle, 'RSSI':avg_power,'time':t_now-t}
                 message = json.dumps(data,indent=2)
                 print(message)
                 send_avg_power(message)

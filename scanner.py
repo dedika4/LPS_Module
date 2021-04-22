@@ -9,10 +9,10 @@ networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "
 # set the index BSSID (MAC address of the AP)
 networks.set_index("BSSID", inplace=True)
 
-beacon_SSID = 'REPN'
+beacon_SSID = 'RedHawk'
 beacon_found = False
-beacon_channel = 10
-channel_hoping = True
+beacon_channel = 1
+channel_hoping = False
 
 # interface name, check using iwconfig
 interface = "wlan1mon"
