@@ -3,6 +3,7 @@ import json
 import sys
 import os
 import math
+import numpy as np
 import operator
 
 import pika
@@ -20,11 +21,16 @@ def calculate_distance(avg_power,path_loss_model='fspl'):
     else:
         loss_param = 0
 
-    d = 10**((loss - loss_param)/20) # estimate distance in km
-    d_m = d * 1000 # estimate distance in meter
+    #d = 10**((loss - loss_param)/20) # estimate distance in km
+    #d_m = d * 1000 # estimate distance in meter
+
+    ## Fit Equation from Calibration ##
+    log_d = (avg_power+45.96)/(-6.999)
+    d_m=10**log_d 
     return d_m,loss
 
 def estimate_coordinate(angle, distance):
+    angle=0
     x = distance * math.sin(angle)
     y = distance * math.cos(angle)
     return x,y

@@ -9,7 +9,7 @@ networks = pandas.DataFrame(columns=["BSSID", "SSID", "dBm_Signal", "Channel", "
 # set the index BSSID (MAC address of the AP)
 networks.set_index("BSSID", inplace=True)
 
-beacon_SSID = 'RedHawk'
+beacon_SSID = 'Beamformer'
 beacon_found = False
 beacon_channel = 1
 channel_hoping = False

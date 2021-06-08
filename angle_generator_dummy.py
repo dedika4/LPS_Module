@@ -9,7 +9,7 @@ line = connection.channel()
 line.exchange_declare(exchange='beam-angle',
                     exchange_type='fanout')
 
-packet_update_period = 0.5 #float(sys.argv[1]) # in seconds
+packet_update_period = float(sys.argv[1]) # in seconds
 
 while True:
     i = 0
@@ -18,7 +18,7 @@ while True:
         while i <= 180:
             t_now = time.time()
             if (t_now - t)>= packet_update_period:
-                data = i
+                data = 0
                 line.basic_publish(exchange='beam-angle',
                                 routing_key='',
                                 body=str(data))

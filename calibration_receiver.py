@@ -35,7 +35,7 @@ def main():
         global timestamp, FILE_NAME, FIELD_NAMES
         timestamp+=packet_update_period
 
-        if timestamp > 315:
+        if timestamp > 180:
             raise Exception("Data Gathering Done!")
     
         message = json.loads(body)
