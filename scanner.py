@@ -11,7 +11,7 @@ networks.set_index("BSSID", inplace=True)
 
 beacon_SSID = 'Beamformer'
 beacon_found = False
-beacon_channel = 1
+beacon_channel = 2
 channel_hoping = False
 
 # interface name, check using iwconfig
