@@ -18,7 +18,7 @@ while True:
         while i <= 180:
             t_now = time.time()
             if (t_now - t)>= packet_update_period:
-                data = 0
+                data = i
                 line.basic_publish(exchange='beam-angle',
                                 routing_key='',
                                 body=str(data))

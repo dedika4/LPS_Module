@@ -11,4 +11,6 @@ xterm -hold -e python3 calibration_receiver.py $DISTANCE $INTERVAL &
 sleep 1s
 xterm -hold -e python3 send_scaner.py $CHANNEL $INTERVAL &
 sleep 2s
+xterm -hold -e python3 rf_detector.py $INTERVAL &
+sleep 2s
 xterm -hold -e python3 angle_generator_dummy.py $INTERVAL
