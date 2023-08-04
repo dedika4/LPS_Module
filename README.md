@@ -1,2 +1,2 @@
 # LPS_Module
-Repository of local positioning module for final project 
+Repository of wifi based local positioning module for final project 
